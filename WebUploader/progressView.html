@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #000;
+        }
+        .progress-header{
+            color: #fff;
+            text-align: left;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font: 20px Arial, sans-serif;
+            margin-block-end: auto;
+        }
+
+        .progress-container {
+            width: 300px;
+            height: 10px;
+            background-color: white;
+            position: relative;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            width: 60%;
+            height: 100%;
+            background-color: #01a3e3;
+            border-radius: 10px;
+            position: absolute;
+        }
+        .progress-label {
+            position: absolute;
+            border-radius: 10px;
+            color: #01a3e3;
+            top: 50%;
+            left: 100%;
+            transform: translate(30%, -50%);
+            font-size: large;
+            font-family: ui-sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="progress-header", id="clientName">Client Name</h2>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-label" id="progressLabel">0%</div>
+    </div>
+    <div id="processResultContainer"></div> 
+
+    <script src="renderer.js"></script>
+    
+</body>
+</html>
