@@ -1,5 +1,5 @@
 const {ipcRenderer}= require('electron/renderer')
-
+const ipc = ipcRenderer
 let currentClient= ""
 
 // * UI update events
@@ -25,6 +25,25 @@ ipcRenderer.on('completed-process', (event,result) => {
     appendResult(result)
     updateProgress(100,{ processResult: result });
 });
+
+minBtn.addEventListener('click',()=>{
+    ipc.send('minimizeApp')
+})
+
+maxBtn.addEventListener('click',()=>{
+    ipc.send('maximizeApp')
+})
+endBtn.addEventListener('click',()=>{
+    ipc.send('closeApp')
+})
+
+
+
+
+
+
+
+
 
 function updateName(clientName){
     if (clientName !== ""){

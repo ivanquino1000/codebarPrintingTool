@@ -1,0 +1,11 @@
+# Avoid Excel Temporary Files 
+Src/~$*.xlsm
+Src/~$*.xlam
+# iGNORE: Node Modules - RUN npm install on script Directory to download neccesary files 
+WebUploader/node_modules
+WebUploader/dist
+WebUploader/icons
+Addins
+WebUploader/out
+WebUploader/.git
+

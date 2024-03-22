@@ -1,13 +1,15 @@
 
 const { exec } = require('child_process');
-const {app, BrowserWindow,screen } = require('electron'); 
+const {app, BrowserWindow, screen, ipcMain } = require('electron'); 
 const path = require('path');
 
 const {Downloader} = require('./WebExport')
-const {Uploader} = require('./WebUpload')
+const {Uploader} = require('./WebUpload');
+const { triggerAsyncId } = require('async_hooks');
 
 //  * shell defined operation => download | upload
 // - Default Operation = Download 
+const ipc = ipcMain
 const app_operation_mode  = process.argv[2] || 'download';
 
 let mainWindow;
@@ -16,9 +18,9 @@ app.on('ready',()=>{
     createWindow()
     //  * Upload Specification Handler
     if (app_operation_mode == "upload" ){
-        webUpload_init();
+        //webUpload_init();
     }else{
-        webDownload_init();
+        //webDownload_init();
     }
 })
 
@@ -28,27 +30,41 @@ const createWindow = async () => {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
     mainWindow = new BrowserWindow({
-        width: 400,
+        width: 500,
         height: 200,
         alwaysOnTop:true,
         autoHideMenuBar:true,
         //maximizable:false,
         //minimizable:false,
-        //frame:false,
+        frame:false,
         //roundedCorners:true,
         //titleBarStyle:'hidden',
         webPreferences: {
             devTools:true,
             nodeIntegration: true,
-            contextIsolation:false,
+            contextIsolation: false,
+            enableRemoteModule: true
         },
         
-        x: width - 400, 
+        x: width - 500, 
         y: height - 400,
     })
     mainWindow.setTitle(app_operation_mode == 'upload'? 'Subida de Productos':'Descarga de Productos')
     mainWindow.loadFile('progressView.html');
     
+    ipc.on('minimizeApp',()=>{
+        mainWindow.minimize()
+    })
+    ipc.on('maximizeApp',()=>{
+        if(mainWindow.isMaximized()){
+            mainWindow.restore()
+        }else{
+            mainWindow.maximize()
+        }
+    })
+    ipc.on('closeApp',()=>{
+        mainWindow.close()
+    })
 }
 
 
