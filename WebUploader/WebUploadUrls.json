@@ -13,6 +13,13 @@
         "WebAppType": "ArcaDigital",
         "User": "admin.larico@jbsistemas.com",
         "Password": "@Misti456@"
+      },
+      {
+        "name": "gri",
+        "Url": "https://gri.arca.digital/items",
+        "WebAppType": "ArcaDigital",
+        "User": "gri.admin@jbsistemas.com",
+        "Password": "@Misti456@"
       }
     ]
 }

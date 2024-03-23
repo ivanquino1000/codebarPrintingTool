@@ -18,9 +18,9 @@ app.on('ready',()=>{
     createWindow()
     //  * Upload Specification Handler
     if (app_operation_mode == "upload" ){
-        //webUpload_init();
+        webUpload_init();
     }else{
-        //webDownload_init();
+        webDownload_init();
     }
 })
 

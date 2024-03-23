@@ -27,7 +27,7 @@ class Uploader extends EventEmitter{
     
     // * Main Upload : Redirects to client.webType Methods
     async UploadWebApp() {
-        const browser = await chromium.launch({ headless: false });
+        const browser = await chromium.launch({ headless: true });
         let ResultsLogger = "";
 
         for (const client of this.clients.clients) {
