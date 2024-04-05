@@ -5,6 +5,7 @@ Src/~$*.xlam
 WebUploader/node_modules
 WebUploader/dist
 Addins
+Config/RequiredFonts/EAN-13.ttf
 WebUploader/out
 WebUploader/.git
 
