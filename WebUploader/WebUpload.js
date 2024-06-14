@@ -73,7 +73,7 @@ class Uploader extends EventEmitter{
         //  Go to the Upload URL Address
         try{
             await this.loginArcaDgital(page,client)
-            await page.goto(client.Url)
+            await page.goto(client.Url, { timeout: 600000 })
     
             //Log in - Items Redirection
             if (page.url().includes('login')){

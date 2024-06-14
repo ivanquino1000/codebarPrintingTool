@@ -108,7 +108,7 @@ class Downloader extends EventEmitter{
         //Ensure Items Url Path to be loaded
         try {
             await this.loginArcaDgital(page, client);
-            await page.goto(client.Url);
+            await page.goto(client.Url, { timeout: 600000 });
 
             //Log in - Items Redirection
             if (page.url().includes("login")) {
