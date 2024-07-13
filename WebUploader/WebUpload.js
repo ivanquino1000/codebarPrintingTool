@@ -137,7 +137,7 @@ class Uploader extends EventEmitter{
         await page.getByPlaceholder("Seleccionar").click();
     
         //Select Principal warehouse
-        await page.locator(".el-select-dropdown__item").getByText('Almacén Oficina Principal').click();
+        await page.locator(".el-select-dropdown__item").getByText('Almacén').click();
     
         //Select the Upload File Element and uploads the webapp Uploads Format
         
