@@ -31,7 +31,7 @@ const createWindow = async () => {
 
     mainWindow = new BrowserWindow({
         width: 500,
-        height: 200,
+        height: 280,
         alwaysOnTop:true,
         autoHideMenuBar:true,
         //maximizable:false,
@@ -47,8 +47,9 @@ const createWindow = async () => {
         },
         
         x: width - 500, 
-        y: height - 400,
+        y: height - 300,
     })
+    //mainWindow.webContents.openDevTools();
     mainWindow.setTitle(app_operation_mode == 'upload'? 'Subida de Productos':'Descarga de Productos')
     mainWindow.loadFile('progressView.html');
     
@@ -75,7 +76,7 @@ function webUpload_init() {
     
     uploader.on('newClient', (client)=> {
         mainWindow.webContents.send('new-client', client);
-        console.log(`new Client: ${client} `);
+        console.log(`Mainjs(e) new client: ${client} `);
     });
 
     uploader.on('progressUpdate', (action)=> {
@@ -106,13 +107,13 @@ function webDownload_init() {
 
     exportProcess.on('newClient', (client)=> {
         mainWindow.webContents.send('new-client', client);
-        console.log(`new Client: ${client} `);
+        console.log(`Mainjs(e) new client: ${client} `);
     });
 
     exportProcess.on('progressUpdate', (action)=> {
         const {stageDescription,progress} =action;
         mainWindow.webContents.send('update-progress', action);
-        console.log(`Download update: ${stageDescription} ,${progress} `);
+        console.log(`Download update: ${stageDescription} ${progress} `);
     });
 
     exportProcess.on('completedOperation', (result)=> {

@@ -50,7 +50,7 @@ class Downloader extends EventEmitter{
                 case "ArcaDigital":
 
                     this.emit('progressUpdate', {
-                        'stageDescription':"Iniciando Descarga ...",
+                        'stageDescription':"Accediendo al sitio web",
                         'progress': 10
                     });
 
@@ -62,7 +62,7 @@ class Downloader extends EventEmitter{
                     break;
                 case "Odoo":
                     this.emit('progressUpdate', {
-                        'stageDescription':"Iniciando Descarga ...",
+                        'stageDescription':"Accediendo al sitio web",
                         'progress': 10
                     });
 
@@ -88,7 +88,7 @@ class Downloader extends EventEmitter{
     async loginArcaDgital(page, client) {
 
         this.emit('progressUpdate', {
-            'stageDescription':"Iniciando Session ...",
+            'stageDescription':"Registrando Credenciales Usuario /  Contrasena",
             'progress': 30
         });
 
@@ -146,7 +146,7 @@ class Downloader extends EventEmitter{
         // Place the download from the Items page
         try {
             this.emit('progressUpdate', {
-                'stageDescription':"Descargando Productos ...",
+                'stageDescription':"obteniendo la interfaz de subida de archivos(productos)",
                 'progress': 60
             });
 

@@ -37,7 +37,7 @@ class Uploader extends EventEmitter{
             switch (client.WebAppType) {
                 case "ArcaDigital":
                     this.emit('progressUpdate', {
-                        'stageDescription':"Iniciando Subida ...",
+                        'stageDescription':"Accediendo al sitio web",
                         'progress': 10
                     });
 
@@ -48,7 +48,7 @@ class Uploader extends EventEmitter{
                     break;
                 case "Odoo":
                     this.emit('progressUpdate', {
-                        'stageDescription':"Iniciando Subida ...",
+                        'stageDescription':"Accediendo al sitio web",
                         'progress': 10
                     });
                     uploadResult = await this.uploadOdoo(client, browser);
@@ -108,7 +108,7 @@ class Uploader extends EventEmitter{
         // Place the download from the Items page
         try {
             this.emit('progressUpdate', {
-                'stageDescription':"Subiendo Productos ...",
+                'stageDescription':"obteniendo la interfaz de subida de archivos(productos)",
                 'progress': 60
             });
             await this.beginUploadArcaDigital(page)
@@ -156,7 +156,7 @@ class Uploader extends EventEmitter{
     async  loginArcaDgital(page,client){
         
         this.emit('progressUpdate', {
-            'stageDescription':"Iniciando Session ...",
+            'stageDescription':"Registrando Credenciales Usuario /  Contrasena",
             'progress': 30
         });
 

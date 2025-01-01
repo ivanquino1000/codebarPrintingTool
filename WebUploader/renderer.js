@@ -1,4 +1,5 @@
-const {ipcRenderer}= require('electron/renderer')
+const {ipcRenderer}= require('electron/renderer');
+const { stat } = require('original-fs');
 const ipc = ipcRenderer
 let currentClient= ""
 
@@ -6,7 +7,7 @@ let currentClient= ""
 
 ipcRenderer.on('new-client', (event,client) => {
     currentClient = client
-    console.log('Renderer Received New Client:', client); // Log the received progress update
+    console.log('Renderer Received New Client:', client); 
     updateName(client)
     updateProgress(0);
 });
@@ -15,8 +16,7 @@ ipcRenderer.on('update-progress', (event,progressData) => {
     const { stageDescription, progress } = progressData;
     
     console.log('Renderer Received progress update:', stageDescription, progress); // Log the received progress update
-    
-    updateProgress(progress);
+    updateProgress(stageDescription,progress);
 });
 
 ipcRenderer.on('completed-process', (event,result) => {
@@ -38,26 +38,25 @@ endBtn.addEventListener('click',()=>{
 })
 
 
-
-
-
-
-
-
-
 function updateName(clientName){
     if (clientName !== ""){
-        const labelClientName = capitalize(clientName)
+        const labelClientName = clientName.toUpperCase()
         var clientNameLabel = document.getElementById('clientName');
-        clientNameLabel.innerText = `Procesando para : ${labelClientName}`
+        console.log (` Client name received : ${clientName}`)
+        clientNameLabel.innerText = `WebSite:  ${labelClientName}`
     }
 }
 
-function updateProgress(progress) {
+function updateProgress(stageDescription,progress) {
     
     var progressBar = document.getElementById('progressBar');
     var progressLabel = document.getElementById('progressLabel');
 
+    var stateLabel = document.getElementById('stateLabel');
+
+    stateLabel.innerHTML = `
+        ${capitalize(stageDescription)}  : ${progress} %
+        `;  
     progressBar.style.width = progress + '%';
     progressLabel.innerText = progress + '%';
     
@@ -72,7 +71,7 @@ function appendResult(processResult){
         resumeDiv.style.margin = '0';
         resumeDiv.style.marginLeft = '20px';
         resumeDiv.style.font = '13px Arial, sans-serif';
-        resumeDiv.style.marginTop = '5px';
+        resumeDiv.style.marginTop = '50px';
 
         // Populate the resume div with data (example)
         let resultLabel = processResult === "Success" ? "Exitoso" : "Fallido";

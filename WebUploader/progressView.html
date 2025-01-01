@@ -35,12 +35,13 @@
             
             -webkit-app-region: drag;
             -webkit-user-select: none;
+            user-select: none; 
             margin-left: 10px;  /* Reduce margin-right */
             flex: 1;
             flex-grow: 1; /* Allow the title to grow to fill available space */
             flex-shrink: 1; /* Allow the title to shrink to fit available space */
             white-space: nowrap; /* Prevent the title from wrapping to the next line */
-            font-family: 'Arial', sans-serif; /* Choose a font */
+            font-family: 'Segoe UI';
             font-size: 16px; /* Set the initial font size */
             font-weight: bold; /* Set font weight */
             text-transform: uppercase; /* Convert text to uppercase */
@@ -148,13 +149,29 @@
             font-size: large;
             font-family: ui-sans-serif;
         }
+        .state-label {
+            position: absolute;
+            display: block;
+            border-radius: 10px;
+            color: white;
+            top: calc(50% + 40px); 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: medium;
+            font-family: 'Roboto', Arial, sans-serif;
+            width: 300px;  /* Adjust the width as needed */
+            height: 30px;  /* Adjust the height as needed */
+            padding: 10px;  /* Adds space inside the box */
+            text-align: center;  /* Centers the text inside the box */
+            background-color: rgba(0, 0, 0, 0.6);   
+        }
     </style>
 </head>
 <body>
     <div class="mainApp">
         <div class="topBar">
             <div class="tittleBar">
-                <div class="tittle">Web Component Process</div>
+                <div class="tittle">Export / Upload (Web)</div>
                 <div class="tittleBarButtons">
                     <button class="topbar minBtn" id="minBtn"></button>
                     <button class="topbar maxBtn" id="maxBtn"></button>
@@ -166,10 +183,11 @@
     </div>
 
     
-    <h2 class="progress-header", id="clientName">Client Name</h2>
+    <h2 class="progress-header", id="clientName">web user</h2>
     <div class="progress-container">
         <div class="progress-bar" id="progressBar"></div>
-        <div class="progress-label" id="progressLabel">0%</div>
+        <div class="progress-label" id="progressLabel">0%</div><br>
+        <div class="state-label" id="stateLabel">Stages Description</div>
     </div>
     <div id="processResultContainer"></div> 
 
