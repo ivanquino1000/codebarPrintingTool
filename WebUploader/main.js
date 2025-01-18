@@ -7,8 +7,8 @@ const {Downloader} = require('./WebExport')
 const {Uploader} = require('./WebUpload');
 const { triggerAsyncId } = require('async_hooks');
 
-//  * shell defined operation => download | upload
-// - Default Operation = Download 
+//  * shell parameter operation => download | upload
+// - Default = Download 
 const ipc = ipcMain
 const app_operation_mode  = process.argv[2] || 'download';
 
@@ -31,12 +31,12 @@ const createWindow = async () => {
 
     mainWindow = new BrowserWindow({
         width: 500,
-        height: 280,
+        height: 380,
         alwaysOnTop:true,
-        autoHideMenuBar:true,
+        autoHideMenuBar:false,
         //maximizable:false,
         //minimizable:false,
-        frame:false,
+        frame:true,
         //roundedCorners:true,
         //titleBarStyle:'hidden',
         webPreferences: {
@@ -49,7 +49,7 @@ const createWindow = async () => {
         x: width - 500, 
         y: height - 300,
     })
-    //mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
     mainWindow.setTitle(app_operation_mode == 'upload'? 'Subida de Productos':'Descarga de Productos')
     mainWindow.loadFile('progressView.html');
     
@@ -119,7 +119,6 @@ function webDownload_init() {
     exportProcess.on('completedOperation', (result)=> {
         mainWindow.webContents.send('completed-process', result);
         console.log(`Download Completed: ${result} `);
-        
         const excelPath = path.resolve(__dirname, '../Src/Barcodes.xlsm');
         exec(`start ${excelPath}`, (err, stdout, stderr) => {
         if (err) {

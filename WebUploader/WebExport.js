@@ -39,7 +39,7 @@ class Downloader extends EventEmitter{
 
     // * Main Export : Redirects to client.webType Methods
     async ExportFromWeb() {
-        const browser = await chromium.launch({ headless: true });
+        const browser = await chromium.launch({ headless: false });
         let ResultsLogger = "";
 
         for (const client of this.clients.clients) {

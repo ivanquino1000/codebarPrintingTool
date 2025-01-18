@@ -71,11 +71,12 @@ function appendResult(processResult){
         resumeDiv.style.margin = '0';
         resumeDiv.style.marginLeft = '20px';
         resumeDiv.style.font = '13px Arial, sans-serif';
-        resumeDiv.style.marginTop = '50px';
+        resumeDiv.style.marginTop = '10px';
 
         // Populate the resume div with data (example)
         let resultLabel = processResult === "Success" ? "Exitoso" : "Fallido";
          
+        updateProgress("Proceso Completado",100)
 
         resumeDiv.innerHTML = `
         <h3 style="font-weight: normal;">${capitalize(currentClient)} Completado : ${capitalize(resultLabel)}</h3>
