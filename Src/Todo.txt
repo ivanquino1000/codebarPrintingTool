@@ -1,0 +1,2 @@
+Implement a standalone installer for node dependencies 
+Add a Retry 
