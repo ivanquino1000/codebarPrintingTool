@@ -1,3 +1,4 @@
+
 const { chromium } = require("playwright"); // Install npx install chromium
 const notifier = require("node-notifier");
 const os = require("os");
@@ -8,168 +9,207 @@ const URL_Address_Local_Path = `${__dirname}/WebExportUrls.json`;
 const Platform_Downloads_Path = `${os.homedir}\\Downloads\\`;
 const Export_Result_Path = `${__dirname}/WebExportResult.txt`;
 
-const SucessNotification = {
+const SUCCESS_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "EXITOSO",
     timeout: 300000,
 };
-const FailedNotification = {
+const FAILED_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "FALLIDA",
     timeout: 300000,
 };
 
-class Downloader extends EventEmitter{
-    
-    constructor(){
+class Downloader extends EventEmitter {
+    constructor() {
         super();
         this.clients = {};
+        this.browser = null;
     }
 
     async main() {
         try {
-            await updateResultFile("Undefined");
-            this.clients = await getClientsData();
+            await this.updateResultFile("Undefined");
+            this.clients = await this.getClientsData();
+            this.browser = await chromium.launch({ headless: false });
             await this.ExportFromWeb();
-
         } catch (e) {
-            console.error("Main() Error:", e);
+            console.error("Downloader Error: \n ", e);
         }
     }
 
-    // * Main Export : Redirects to client.webType Methods
+    async getClientsData() {
+        try {
+            const data = await fs.readFile(URL_Address_Local_Path, "utf8");
+            try {
+                return JSON.parse(data);
+            } catch (parseError) {
+                throw new Error(`Error Parsing Client Json: ${parseError}`);
+            }
+        } catch (readError) {
+            throw new Error(`Error Reading Client Json: ${readError}`);
+        }
+    }
+
+    async updateResultFile(result) {
+        try {
+            await fs.writeFile(Export_Result_Path, result);
+        } catch (err) {
+            console.log(`Error updating reult file: \n ${err} \n`);
+        }
+    }
+
     async ExportFromWeb() {
-        const browser = await chromium.launch({ headless: false });
-        let ResultsLogger = "";
+        let exportResult = "";
 
         for (const client of this.clients.clients) {
-            this.emit('newClient', client.name)
-            let exportResult = "Undefined"; 
-            
+            this.emit("newClient", client.name);
+            let result = "Undefined";
+
             switch (client.WebAppType) {
                 case "ArcaDigital":
-
-                    this.emit('progressUpdate', {
-                        'stageDescription':"Accediendo al sitio web",
-                        'progress': 10
+                    this.emit("progressUpdate", {
+                        stageDescription: "Accediendo al sitio web",
+                        progress: 10,
                     });
 
-                    exportResult = await this.ExportArcaDigital(client, browser);
+                    result = await this.ExportArcaDigital(client);
+                    this.emit("completedOperation", result);
+                    exportResult += `${result}`;
 
-                    this.emit('completedOperation', exportResult);
-
-                    ResultsLogger += `${exportResult}`;
                     break;
                 case "Odoo":
-                    this.emit('progressUpdate', {
-                        'stageDescription':"Accediendo al sitio web",
-                        'progress': 10
+                    this.emit("progressUpdate", {
+                        stageDescription: "Accediendo al sitio web",
+                        progress: 10,
                     });
 
-                    exportResult = await this.exportOdoo(client, browser);            
-                    this.emit('completedOperation', exportResult);
-                    ResultsLogger += `${exportResult}`;
+                    result = await this.exportOdoo(client);
+                    this.emit("completedOperation", result);
+                    exportResult += `${result}`;
                     break;
                 default:
-                    console.log(`${client.name} = Invalid WebApp: ${client.Url}`);
+                    console.log(
+                        `${client.name} = Invalid WebApp: ${client.Url}`
+                    );
                     break;
             }
         }
 
-        console.log("ResultsLogger: ", ResultsLogger);
+        console.log("exportResult: ", exportResult);
 
-        const notification = ResultsLogger === "Success" ? SucessNotification : FailedNotification;
+        const notification =
+            exportResult === "Success"
+                ? SUCCESS_NOTIFICATION
+                : FAILED_NOTIFICATION;
         notifier.notify(notification);
 
-        updateResultFile(ResultsLogger);
-        browser.close();
+        this.updateResultFile(exportResult);
+        this.browser.close();
+    }
+
+    async ExportArcaDigital(client) {
+        const page = await this.browser.newPage();
+
+        //  * Login Process
+        let retryCounter = 0;
+        const maxRetries = 4;
+
+        while (retryCounter < maxRetries) {
+            try {
+                await this.loginArcaDgital(page, client);
+                await page.goto(client.Url, { timeout: 600000 }); // url-items
+
+                if (page.url().includes("items")) {
+                    console.log(
+                        `Successfully navigated to the items page for ${client.name}`
+                    );
+                    break;
+                }
+
+                console.log(
+                    `Failed to redirect to the items page for ${client.name}`
+                );
+                retryCounter++;
+            } catch (error) {
+                console.error(
+                    `Error during login attempt - [${retryCounter}]: \n `,
+                    error.message
+                );
+                retryCounter++;
+
+                //  Retry Limit Break out
+                if (retryCounter >= maxRetries) {
+                    console.log(
+                        `Max login retry attempts reached for ${client.name}. Exiting.`
+                    );
+                    return "Failed";
+                }
+
+                //  Delay betwenn Attempts
+                await new Promise((resolve) => setTimeout(resolve, 8000));
+            }
+        }
+
+        // Download Attempt
+
+        let downloadRetryCounter = 0;
+        const downloadMaxRetries = 4;
+
+        while (downloadRetryCounter < downloadMaxRetries) {
+            try {
+                await this.start_Download_ArcaDigital(page);
+                break;
+            } catch (error) {
+                console.error(
+                    `Error during Download Retry - ${downloadRetryCounter}: \n`,
+                    error.message
+                );
+                downloadRetryCounter++;
+
+                //  Retry Limit Break out
+                if (downloadRetryCounter >= downloadMaxRetries) {
+                    console.log(
+                        `Max downlaod retry attempts reached for ${client.name}. Exiting.`
+                    );
+                    return "Failed";
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+        }
+
+        console.log("SUCCESS OPERATION");
+        return "Success";
     }
 
     async loginArcaDgital(page, client) {
-
-        this.emit('progressUpdate', {
-            'stageDescription':"Registrando Credenciales Usuario /  Contrasena",
-            'progress': 30
+        this.emit("progressUpdate", {
+            stageDescription: "Registrando Credenciales Usuario /  Contrasena",
+            progress: 30,
         });
 
         let urlObject = UrlFactory(client.Url);
 
-        await page.goto(urlObject.protocol + urlObject.domain + "/login");
+        await page.goto(urlObject.protocol + urlObject.domain + "/login", { timeout: 600000 });
         await page.type("#email", client.User);
         await page.type("#password", client.Password);
         await page.click(".btn-signin");
-        
+
         return;
     }
 
-    async ExportArcaDigital(client, browser) {
-        const page = await browser.newPage();
-
-        //Ensure Items Url Path to be loaded
-        try {
-            await this.loginArcaDgital(page, client);
-            await page.goto(client.Url, { timeout: 600000 });
-
-            //Log in - Items Redirection
-            if (page.url().includes("login")) {
-                await this.loginArcaDgital(page, client);
-            }
-            let loginRetries = 0;
-            while (loginRetries < 4) {
-                try {
-                    // Error Loading site or LogIn Redirection
-                    if (!page.url().includes("items")) {
-                        console.log(
-                            `URL Items Page Failed Retriying: ${loginRetries}`
-                        );
-
-                        //  LogIn Redirection - Login
-                        if (page.url().includes("login")) {
-                            await this.loginArcaDgital(page, client);
-                        }
-                        //  Error Redirection - Reload
-                        await page.reload();
-                    } else {
-                        break;
-                    }
-                    loginRetries++;
-                } catch (error) {
-                    console.error("Error during Export:", error.message);
-                    return "Failed";
-                }
-            }
-        } catch (error) {
-            console.error("Error during Export:", error.message);
-            return "Failed";
-        }
-
-        // Place the download from the Items page
-        try {
-            this.emit('progressUpdate', {
-                'stageDescription':"obteniendo la interfaz de subida de archivos(productos)",
-                'progress': 60
-            });
-
-            await this.start_Download_ArcaDigital(page);
-
-
-            console.log("SUCCESS OPERATION");
-            return "Success";
-        } catch (error) {
-            console.error(
-                "FAILED OPERATION: Error At Data Extracting :",
-                error.message
-            );
-
-            return "Failed";
-        } 
-    }
-
     async start_Download_ArcaDigital(page) {
-
+        this.emit("progressUpdate", {
+            stageDescription:
+                "obteniendo la interfaz de subida de archivos(productos)",
+            progress: 60,
+        });
 
         // Click Export Button
-        await page.click("button.btn.btn-custom.btn-sm.mt-2.mr-2.dropdown-toggle");
+        await page.click(
+            "button.btn.btn-custom.btn-sm.mt-2.mr-2.dropdown-toggle"
+        );
 
         // Wait for the dropdown menu to appear
         await page.waitForSelector("a.dropdown-item.text-1");
@@ -194,18 +234,19 @@ class Downloader extends EventEmitter{
         );
 
         // Start waiting for download before clicking. Note no await.
-        const downloadPromise = page.waitForEvent("download", { timeout: 300000 });
+        const downloadPromise = page.waitForEvent("download", {
+            timeout: 600000,
+        });
 
         await ProccessButton[2].click();
         //await page.getByText('Download file').click();
         const download = await downloadPromise;
 
-        // Wait for the download process to complete and save the downloaded file somewhere.
+        // Wait for the download process to complete and save the downloaded file.
         await download.saveAs(
             Platform_Downloads_Path + download.suggestedFilename()
         );
     }
-
 }
 
 // * Shell Execution
@@ -244,28 +285,6 @@ function UrlFactory(url) {
 // ?   Undefined: Proccess started
 // *   Success: Proccess started
 // !   Failed: Proccess started
-
-async function updateResultFile(result) {
-    try {
-        await fs.writeFile(Export_Result_Path, result);
-    } catch (err) {
-        console.log(err);
-    }
-}
-
-async function getClientsData() {
-    try {
-        const data = await fs.readFile(URL_Address_Local_Path, "utf8");
-        try {
-            // Parse the JSON content and return the parsed data
-            return JSON.parse(data);
-        } catch (parseError) {
-            throw new Error(`Error Parsing Client Json: ${parseError}`);
-        }
-    } catch (readError) {
-        throw new Error(`Error Reading Client Json: ${readError}`);
-    }
-}
 
 module.exports = {
     Downloader,

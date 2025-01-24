@@ -8,4 +8,7 @@ Addins
 Config/RequiredFonts/EAN-13.ttf
 WebUploader/out
 WebUploader/.git
+LabelPdfPrinter/node_modules
+LabelPdfPrinter/pdf-layout
+LabelPdfPrinter/pdf-output
 
