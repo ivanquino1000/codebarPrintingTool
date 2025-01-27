@@ -128,6 +128,7 @@ async function printPDF(pdfPath, printerName) {
     const options = {
       printer: printerName,
       sumatraPdfPath: localSumatraPdfPath,
+      orientation: 'portrait'
     };
     const jobID = await print(pdfPath, options);
     console.log(
