@@ -20,7 +20,8 @@
           "../config",
           "../SessionBackup",
           "../Src",
-          "../WebUploader"
+          "../WebUploader",
+          "../LabelPdfPrinter"
         ]
       },
       "makers": [

@@ -1,6 +1,8 @@
 //  Called From Shell with no Parameters
 
 require("dotenv").config();
+const { error } = require("console");
+const inquirer = require('inquirer');
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -15,18 +17,18 @@ let pdfOutputDir = path.resolve(exeDir, "pdf-output");
 let localSumatraPdfPath = path.resolve(exeDir, "SumatraPDF-3.4.6-32.exe");
 
 // devEnviroment Execution
-if (process.env.NODE_ENV === "development") {
+// if (process.env.NODE_ENV === "development") {
   console.log(process.env.NODE_ENV);
   console.log(process.env.TEST);
   pdfLayoutDir = path.resolve(__dirname, "pdf-layout");
   pdfOutputDir = path.resolve(__dirname, "pdf-output");
   localSumatraPdfPath = "";
-}
+//}
 
 main();
 
 //  Returns pdfObject with required data
-async function parsePdfBindings(fileName) {
+async function parsePdfBindings(fileName,filePath) {
   // Parse input pdfName format instructions
   //    [printerName]-[productCode]-[pageCopies].pdf
   //    godex ez4401i-951570252516-120.pdf
@@ -35,7 +37,7 @@ async function parsePdfBindings(fileName) {
   const match = fileName.match(regex);
   if (match) {
     return {
-      path: path.join(pdfLayoutDir, fileName),
+      path: path.join(filePath, fileName),
       pdfName: fileName,
       printerName: match[1],
       productCode: match[2],
@@ -64,19 +66,73 @@ async function main() {
 
   fs.mkdirSync(pdfOutputDir, { recursive: true });
 
-  // iterate  over all pdfs
+  // generate multi-page pdf
   for (let i = 0; i < files.length; i++) {
     try {
       const pdfName = files[i];
-      const pdf = await parsePdfBindings(pdfName);
-      multiPagePdf = await createMultiPagePdf(pdf);
-      await printPDF(multiPagePdf, pdf.printerName);
+      const pdf = await parsePdfBindings(pdfName,pdfLayoutDir);
+      await createMultiPagePdf(pdf);
+    } catch (e) {
+      console.error(`${i} ERROR at creating pdf.\n ${e}`);
+    }
+  }
+
+  // PRINT multi-page pdf
+  const multiPagePdf = fs.readdirSync(pdfOutputDir); /*list of pdf names*/
+
+  // Exit if no files to process in the input folder
+  if (multiPagePdf.length === 0) {
+    console.error(`No files found in : ${pdfOutputDir}`);
+    return;
+  }
+  
+  for (let i = 0; i < multiPagePdf.length; i++) {
+    try {
+      const pdfName = multiPagePdf[i];
+      const pdf = await parsePdfBindings(pdfName,pdfOutputDir);
+      await printPDF(pdf);
     } catch (e) {
       console.error(`${i} ERROR at processing pdf.\n ${e}`);
     }
   }
   console.log(files);
 }
+
+// Function to handle the printer error
+async function handlePrinterError(pdf) {
+  const remainingCopies = 0;
+
+  const response = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'missingCopies',
+      message: `La Impresora se detuvo en la impresion de:  ${pdf.productCode}. Cuantas etiquetas faltan imprimirse?`,
+      default: remainingCopies !== undefined ? remainingCopies.toString() : '0',
+      validate: (input) => {
+        const num = parseInt(input, 10);
+        return !isNaN(num) && num > 0 ? true : 'Por favor ingrese un numero valido de etiquetas';
+      }
+    },
+    {
+      type: 'confirm',
+      name: 'continuePrinting',
+      message: 'Imprimir el resto de productos?',
+      default: true
+    }
+  ]);
+
+  if (response.continuePrinting) {
+    const missingPages = parseInt(response.missingCopies, 10);
+    console.log(`Enviando a imprimir ${missingPages} paginas faltantes...`);
+
+    await printPDF(pdf)
+
+  } else {
+    console.log('Printing canceled.');
+  }
+}
+
+
 
 async function createMultiPagePdf(pdf) {
   // Read the original 1-page PDF
@@ -123,18 +179,23 @@ async function listPrinters() {
 // Example
 //  listPrinters();
 
-async function printPDF(pdfPath, printerName) {
+async function printPDF(pdf) {
+
   try {
     const options = {
-      printer: printerName,
+      printer: pdf.printerName,
       sumatraPdfPath: localSumatraPdfPath,
       orientation: 'portrait'
     };
-    const jobID = await print(pdfPath, options);
+    const jobID = await print(pdf.path, options);
+
+    throw new Error(`Simulated Error Printer failed at ${pdf.pdfName}`);
+
     console.log(
-      `Print job ${jobID} sent successfully to printer "${printerName}".`
+      `Print job ${jobID} sent successfully to printer "${pdf.printerName}".`
     );
   } catch (err) {
-    console.error(`Error printing to printer "${printerName}":`, err);
+    console.error(`Error printing to printer "${pdf.printerName}":`, err);
+    await handlePrinterError(pdf);
   }
 }
