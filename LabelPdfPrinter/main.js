@@ -1,8 +1,5 @@
-//  Called From Shell with no Parameters
-
 require("dotenv").config();
 const { error } = require("console");
-const inquirer = require('inquirer');
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -17,13 +14,13 @@ let pdfOutputDir = path.resolve(exeDir, "pdf-output");
 let localSumatraPdfPath = path.resolve(exeDir, "SumatraPDF-3.4.6-32.exe");
 
 // devEnviroment Execution
-// if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development") {
   console.log(process.env.NODE_ENV);
   console.log(process.env.TEST);
   pdfLayoutDir = path.resolve(__dirname, "pdf-layout");
   pdfOutputDir = path.resolve(__dirname, "pdf-output");
   localSumatraPdfPath = "";
-//}
+}
 
 main();
 
@@ -97,7 +94,7 @@ async function main() {
   }
   console.log(files);
 }
-
+/* 
 // Function to handle the printer error
 async function handlePrinterError(pdf) {
   const remainingCopies = 0;
@@ -120,7 +117,7 @@ async function handlePrinterError(pdf) {
       default: true
     }
   ]);
-
+ */
   if (response.continuePrinting) {
     const missingPages = parseInt(response.missingCopies, 10);
     console.log(`Enviando a imprimir ${missingPages} paginas faltantes...`);
@@ -131,8 +128,6 @@ async function handlePrinterError(pdf) {
     console.log('Printing canceled.');
   }
 }
-
-
 
 async function createMultiPagePdf(pdf) {
   // Read the original 1-page PDF
@@ -151,6 +146,7 @@ async function createMultiPagePdf(pdf) {
   // Save the new multi-page PDF
   const newPdfBytes = await newPdf.save();
 
+  // Create output folder 
   if (!fs.existsSync(pdfOutputDir)) {
     fs.mkdirSync(pdfOutputDir, { recursive: true });
   }
@@ -158,10 +154,11 @@ async function createMultiPagePdf(pdf) {
   const newPdfPath = path.join(pdfOutputDir, `${pdf.pdfName}`);
   fs.writeFileSync(newPdfPath, newPdfBytes);
 
-  console.log(`Created new multi-page PDF at ${newPdfPath}`);
+  console.log(`Created new multi-page PDF at : \n ${newPdfPath}`);
   return newPdfPath;
 }
 
+/* 
 async function listPrinters() {
   try {
     const printers = await getPrinters();
@@ -174,10 +171,7 @@ async function listPrinters() {
     console.error("Error fetching printers:", err);
     return [];
   }
-}
-
-// Example
-//  listPrinters();
+} */
 
 async function printPDF(pdf) {
 
@@ -189,13 +183,11 @@ async function printPDF(pdf) {
     };
     const jobID = await print(pdf.path, options);
 
-    throw new Error(`Simulated Error Printer failed at ${pdf.pdfName}`);
-
     console.log(
       `Print job ${jobID} sent successfully to printer "${pdf.printerName}".`
     );
   } catch (err) {
     console.error(`Error printing to printer "${pdf.printerName}":`, err);
-    await handlePrinterError(pdf);
   }
 }
+    

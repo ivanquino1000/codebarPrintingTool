@@ -33,7 +33,7 @@ const createWindow = async () => {
         autoHideMenuBar: false,
         //maximizable:false,
         //minimizable:false,
-        frame: true,
+        frame: false,
         //roundedCorners:true,
         //titleBarStyle:'hidden',
         webPreferences: {
