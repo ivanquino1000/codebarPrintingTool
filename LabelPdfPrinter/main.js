@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { exec } = require('child_process');
 const { error } = require("console");
 const fs = require("fs");
 const os = require("os");
@@ -25,7 +26,7 @@ if (process.env.NODE_ENV === "development") {
 main();
 
 //  Returns pdfObject with required data
-async function parsePdfBindings(fileName,filePath) {
+async function parsePdfBindings(fileName, filePath) {
   // Parse input pdfName format instructions
   //    [printerName]-[productCode]-[pageCopies].pdf
   //    godex ez4401i-951570252516-120.pdf
@@ -46,6 +47,7 @@ async function parsePdfBindings(fileName,filePath) {
 }
 
 async function main() {
+
   // Exit the program if the input folder does not exist or is not accessible
   if (!fs.existsSync(pdfLayoutDir)) {
     //fs.mkdirSync(pdfLayoutDir, { recursive: true });
@@ -61,13 +63,18 @@ async function main() {
     return;
   }
 
+  // Restart output folder
+  if (fs.existsSync(pdfOutputDir)) {
+    fs.rmSync(pdfOutputDir, { recursive: true, force: true });
+  }
+
   fs.mkdirSync(pdfOutputDir, { recursive: true });
 
   // generate multi-page pdf
   for (let i = 0; i < files.length; i++) {
     try {
       const pdfName = files[i];
-      const pdf = await parsePdfBindings(pdfName,pdfLayoutDir);
+      const pdf = await parsePdfBindings(pdfName, pdfLayoutDir);
       await createMultiPagePdf(pdf);
     } catch (e) {
       console.error(`${i} ERROR at creating pdf.\n ${e}`);
@@ -82,11 +89,11 @@ async function main() {
     console.error(`No files found in : ${pdfOutputDir}`);
     return;
   }
-  
+
   for (let i = 0; i < multiPagePdf.length; i++) {
     try {
       const pdfName = multiPagePdf[i];
-      const pdf = await parsePdfBindings(pdfName,pdfOutputDir);
+      const pdf = await parsePdfBindings(pdfName, pdfOutputDir);
       await printPDF(pdf);
     } catch (e) {
       console.error(`${i} ERROR at processing pdf.\n ${e}`);
@@ -94,40 +101,7 @@ async function main() {
   }
   console.log(files);
 }
-/* 
-// Function to handle the printer error
-async function handlePrinterError(pdf) {
-  const remainingCopies = 0;
 
-  const response = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'missingCopies',
-      message: `La Impresora se detuvo en la impresion de:  ${pdf.productCode}. Cuantas etiquetas faltan imprimirse?`,
-      default: remainingCopies !== undefined ? remainingCopies.toString() : '0',
-      validate: (input) => {
-        const num = parseInt(input, 10);
-        return !isNaN(num) && num > 0 ? true : 'Por favor ingrese un numero valido de etiquetas';
-      }
-    },
-    {
-      type: 'confirm',
-      name: 'continuePrinting',
-      message: 'Imprimir el resto de productos?',
-      default: true
-    }
-  ]);
- */
-  if (response.continuePrinting) {
-    const missingPages = parseInt(response.missingCopies, 10);
-    console.log(`Enviando a imprimir ${missingPages} paginas faltantes...`);
-
-    await printPDF(pdf)
-
-  } else {
-    console.log('Printing canceled.');
-  }
-}
 
 async function createMultiPagePdf(pdf) {
   // Read the original 1-page PDF
@@ -173,13 +147,25 @@ async function listPrinters() {
   }
 } */
 
+async function testprintPDF(pdf) {
+  const pdfPathName = `"${pdf.path}"`
+  console.log ("opening: " + pdfPathName)
+  exec(`print "Godex ZX420i" ${pdfPathName}`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(`Error printing file: ${err}`);
+      return;
+    }
+    console.log(`Print job sent successfully for ${pdf.path} \n ${stdout} \n ${stderr}  `);
+  });
+}
+
 async function printPDF(pdf) {
 
   try {
     const options = {
       printer: pdf.printerName,
       sumatraPdfPath: localSumatraPdfPath,
-      orientation: 'portrait'
+      orientation: 'landscape'
     };
     const jobID = await print(pdf.path, options);
 
@@ -190,4 +176,3 @@ async function printPDF(pdf) {
     console.error(`Error printing to printer "${pdf.printerName}":`, err);
   }
 }
-    

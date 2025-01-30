@@ -44,7 +44,7 @@ const createWindow = async () => {
         },
 
         x: width - 500,
-        y: height - 300,
+        y: height - 450,
     });
     // mainWindow.webContents.openDevTools();
     mainWindow.setTitle(
@@ -102,14 +102,16 @@ function webUpload_init() {
 
 function launchExcel() {
     const excelPath = path.resolve(__dirname, "../Src/Barcodes.xlsm");
-    exec(`start ${excelPath}`, (err, stdout, stderr) => {
-        if (err) {
-            console.error(stderr);
-            console.error(err);
-            return;
-        }
-        console.log(stdout);
-    });
+    setTimeout(() => {
+        exec(`start excel "${excelPath}"`, (err, stdout, stderr) => {
+            if (err) {
+                console.error("Error launching Excel:", err);
+                console.error(stderr);
+                return;
+            }
+            console.log("Excel launched successfully:", stdout);
+        });
+    }, 3000);
 }
 
 //  * Download - Events Handler

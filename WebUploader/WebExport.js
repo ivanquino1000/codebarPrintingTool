@@ -13,11 +13,13 @@ const SUCCESS_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "EXITOSO",
     timeout: 300000,
+    icon: __dirname + '/icons/notifier-success.webp',
 };
 const FAILED_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "FALLIDA",
     timeout: 300000,
+    icon: __dirname + '/icons/notifier-error.png',
 };
 
 class Downloader extends EventEmitter {
