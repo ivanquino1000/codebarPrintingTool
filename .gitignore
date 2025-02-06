@@ -1,12 +1,15 @@
 # Avoid Excel Temporary Files 
 Src/~$*.xlsm
 Src/~$*.xlam
-# iGNORE: Node Modules - RUN npm install on script Directory to download neccesary files 
+# iGNORE: Node Modules, exec folders, exe - binary
 WebUploader/node_modules
-WebUploader/dist
 WebUploader/browser
 WebUploader/out
+
+WebUploader/.vs
+WebUploader/dist
 WebUploader/.git
+# iGNORE: Node Modules, exec folders, exe - binary
 LabelPdfPrinter/node_modules
 LabelPdfPrinter/pdf-layout
 LabelPdfPrinter/pdf-output

@@ -14,8 +14,13 @@ const { triggerAsyncId } = require("async_hooks");
 const ipc = ipcMain;
 
 //  Calling from exe  - > const operationProcess = process.argv[1] || "download";
+//  Calling from exe  - > app.exe upload
+//  Calling from node - > electron . upload
 
-const operationProcess = process.argv[2] || "download";
+const operationProcess =
+    process.env.NODE_ENV === "production"
+        ? process.argv[1] || "download"
+        : process.argv[2] || "download";
 
 let mainWindow;
 
@@ -82,7 +87,7 @@ function webUpload_init() {
 
     uploader.on("newClient", (client) => {
         mainWindow.webContents.send("new-client", client);
-        console.log(`Mainjs(e) new client: ${client} `);
+        console.log(`upload new client: ${client} `);
     });
 
     uploader.on("progressUpdate", (action) => {
@@ -130,7 +135,7 @@ function webDownload_init() {
 
     exportProcess.on("newClient", (client) => {
         mainWindow.webContents.send("new-client", client);
-        console.log(`Mainjs(e) new client: ${client} `);
+        console.log(`Download new client: ${client} `);
     });
 
     exportProcess.on("progressUpdate", (action) => {

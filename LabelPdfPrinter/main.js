@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
-const { getPrinters, print } = require("pdf-to-printer");
+const { getPrinters,print } = require("pdf-to-printer");
 
 const exeDir = path.dirname(process.execPath);
 
@@ -17,7 +17,6 @@ let localSumatraPdfPath = path.resolve(exeDir, "SumatraPDF-3.4.6-32.exe");
 // devEnviroment Execution
 if (process.env.NODE_ENV === "development") {
   console.log(process.env.NODE_ENV);
-  console.log(process.env.TEST);
   pdfLayoutDir = path.resolve(__dirname, "pdf-layout");
   pdfOutputDir = path.resolve(__dirname, "pdf-output");
   localSumatraPdfPath = "";
@@ -31,15 +30,15 @@ async function parsePdfBindings(fileName, filePath) {
   //    [printerName]-[productCode]-[pageCopies].pdf
   //    godex ez4401i-951570252516-120.pdf
 
-  const regex = /^([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
+  const regex = /^(\d+)-([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
   const match = fileName.match(regex);
   if (match) {
     return {
       path: path.join(filePath, fileName),
       pdfName: fileName,
-      printerName: match[1],
-      productCode: match[2],
-      pageCopies: parseInt(match[3], 10),
+      printerName: match[2],
+      productCode: match[3],
+      pageCopies: parseInt(match[4], 10),
     };
   } else {
     throw new Error("Filename does not match expected format.");
@@ -103,6 +102,25 @@ async function main() {
 }
 
 
+async function waitForPrinter(printerName) {
+  const timeout = 30000
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < timeout) {
+    const printers = await getPrinters();
+    const printer = printers.find(p => p.name === printerName);
+
+    if (printer && printer.status === 'idle') {
+      return true; // Printer is ready
+    }
+
+    console.log(`Waiting for printer ${printerName} to become available...`);
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 1 second before checking again
+  }
+
+  throw new Error(`Printer ${printerName} is not available after waiting for ${timeout}ms`);
+}
+
 async function createMultiPagePdf(pdf) {
   // Read the original 1-page PDF
   const originalPdfBytes = fs.readFileSync(pdf.path);
@@ -132,33 +150,6 @@ async function createMultiPagePdf(pdf) {
   return newPdfPath;
 }
 
-/* 
-async function listPrinters() {
-  try {
-    const printers = await getPrinters();
-    console.log("Available Printers:");
-    printers.forEach((printer, index) => {
-      console.log(`${index + 1}. ${printer.name}`);
-    });
-    return printers;
-  } catch (err) {
-    console.error("Error fetching printers:", err);
-    return [];
-  }
-} */
-
-async function testprintPDF(pdf) {
-  const pdfPathName = `"${pdf.path}"`
-  console.log ("opening: " + pdfPathName)
-  exec(`print "Godex ZX420i" ${pdfPathName}`, (err, stdout, stderr) => {
-    if (err) {
-      console.error(`Error printing file: ${err}`);
-      return;
-    }
-    console.log(`Print job sent successfully for ${pdf.path} \n ${stdout} \n ${stderr}  `);
-  });
-}
-
 async function printPDF(pdf) {
 
   try {
@@ -167,6 +158,8 @@ async function printPDF(pdf) {
       sumatraPdfPath: localSumatraPdfPath,
       orientation: 'landscape'
     };
+
+    // await waitForPrinter(pdf.printerName)
     const jobID = await print(pdf.path, options);
 
     console.log(

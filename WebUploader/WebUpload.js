@@ -19,9 +19,16 @@ const Local_UploadFile_Path_Odoo = path.resolve(
 const Upload_Result_Path = `${__dirname}/WebUploadResult.txt`;
 const URL_Address_Local_Path = `${__dirname}/WebUploadUrls.json`;
 
-const browserExecutablePath = path.join(__dirname, 'browser', 'chromium-1105', 'chrome-win', 'chrome.exe');
-
-
+const browserExecutablePath =
+    process.env.NODE_ENV === "production"
+        ? path.join(
+              __dirname,
+              "browser",
+              "chromium-1105",
+              "chrome-win",
+              "chrome.exe"
+          )
+        : undefined;
 
 class Uploader extends EventEmitter {
     constructor() {
@@ -33,7 +40,10 @@ class Uploader extends EventEmitter {
         try {
             await this.updateResultFile("Undefined");
             this.clients = await this.getClientsData();
-            this.browser = await chromium.launch({ headless: false ,executablePath: browserExecutablePath});
+            this.browser = await chromium.launch({
+                headless: false,
+                executablePath: browserExecutablePath,
+            });
             await this.UploadWebApp();
         } catch (e) {
             console.error("Uploader Error: \n", e);
@@ -107,7 +117,7 @@ class Uploader extends EventEmitter {
 
     async uploadArcaDigital(client) {
         const page = await this.browser.newPage();
-        
+
         //  * Login Process
         let retryCounter = 0;
         const maxRetries = 4;
@@ -172,7 +182,7 @@ class Uploader extends EventEmitter {
                     await page.close();
                     return "Failed";
                 }
-                
+
                 //  Delay betwenn Attempts
                 await new Promise((resolve) => setTimeout(resolve, 5000));
             }
@@ -235,7 +245,9 @@ class Uploader extends EventEmitter {
 
         let urlObject = UrlFactory(client.Url);
 
-        await page.goto(urlObject.protocol + urlObject.domain + "/login", { timeout: 600000 });
+        await page.goto(urlObject.protocol + urlObject.domain + "/login", {
+            timeout: 600000,
+        });
         await page.type("#email", client.User);
         await page.type("#password", client.Password);
         await page.click(".btn-signin");

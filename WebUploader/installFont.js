@@ -41,7 +41,7 @@ class FontInstaller{
     installFonts() {
         try {
             // Run the batch file to install the font
-            child_process.execSync(this.batFilePath, { stdio: "inherit" });
+            child_process.execSync(this.batFilePath, { stdio: "ignore" });
             console.log("Font installation initiated via batch file.");
         } catch (err) {
             console.error("Error executing batch file:", err);

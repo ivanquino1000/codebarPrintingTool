@@ -1,4 +1,3 @@
-
 const { chromium } = require("playwright"); // Install npx install chromium
 const notifier = require("node-notifier");
 const os = require("os");
@@ -14,16 +13,25 @@ const SUCCESS_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "EXITOSO",
     timeout: 300000,
-    icon: __dirname + '/icons/notifier-success.webp',
+    icon: __dirname + "/icons/notifier-success.webp",
 };
 const FAILED_NOTIFICATION = {
     title: "Descarga de Archivos",
     message: "FALLIDA",
     timeout: 300000,
-    icon: __dirname + '/icons/notifier-error.png',
+    icon: __dirname + "/icons/notifier-error.png",
 };
 
-const browserExecutablePath = path.join(__dirname, 'browser', 'chromium-1105', 'chrome-win', 'chrome.exe');
+const browserExecutablePath =
+    process.env.NODE_ENV === "production"
+        ? path.join(
+              __dirname,
+              "browser",
+              "chromium-1105",
+              "chrome-win",
+              "chrome.exe"
+          )
+        : undefined;
 
 class Downloader extends EventEmitter {
     constructor() {
@@ -36,7 +44,10 @@ class Downloader extends EventEmitter {
         try {
             await this.updateResultFile("Undefined");
             this.clients = await this.getClientsData();
-            this.browser = await chromium.launch({ headless: false ,executablePath: browserExecutablePath});
+            this.browser = await chromium.launch({
+                headless: false,
+                executablePath: browserExecutablePath,
+            });
             await this.ExportFromWeb();
         } catch (e) {
             console.error("Downloader Error: \n ", e);
@@ -196,7 +207,9 @@ class Downloader extends EventEmitter {
 
         let urlObject = UrlFactory(client.Url);
 
-        await page.goto(urlObject.protocol + urlObject.domain + "/login", { timeout: 600000 });
+        await page.goto(urlObject.protocol + urlObject.domain + "/login", {
+            timeout: 600000,
+        });
         await page.type("#email", client.User);
         await page.type("#password", client.Password);
         await page.click(".btn-signin");
