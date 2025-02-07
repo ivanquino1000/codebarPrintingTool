@@ -1,8 +1,10 @@
-const { chromium } = require("playwright"); // Install npx install chromium
+
+const { chromium } = require("playwright");
 const notifier = require("node-notifier");
 const os = require("os");
 const fs = require("node:fs/promises");
 const EventEmitter = require("events");
+const { glob, globSync, globStream, globStreamSync, Glob } = require("glob");
 const path = require("path");
 
 const URL_Address_Local_Path = `${__dirname}/WebExportUrls.json`;
@@ -22,17 +24,6 @@ const FAILED_NOTIFICATION = {
     icon: __dirname + "/icons/notifier-error.png",
 };
 
-const browserExecutablePath =
-    process.env.NODE_ENV === "production"
-        ? path.join(
-              __dirname,
-              "browser",
-              "chromium-1105",
-              "chrome-win",
-              "chrome.exe"
-          )
-        : undefined;
-
 class Downloader extends EventEmitter {
     constructor() {
         super();
@@ -44,13 +35,36 @@ class Downloader extends EventEmitter {
         try {
             await this.updateResultFile("Undefined");
             this.clients = await this.getClientsData();
+
             this.browser = await chromium.launch({
                 headless: false,
-                executablePath: browserExecutablePath,
+                executablePath: await this.findBrowserExecutable(),
             });
             await this.ExportFromWeb();
         } catch (e) {
             console.error("Downloader Error: \n ", e);
+        }
+    }
+
+    async findBrowserExecutable() {
+        // undefined uses the default chromium path
+        let browserExecutablePath = [];
+        const chromiumExePattern = __dirname + "/browser" + "/**/chrome.exe";
+
+        try {
+            browserExecutablePath = await glob(chromiumExePattern);
+            console.log("matching browser paths: \n", browserExecutablePath);
+            if (!browserExecutablePath.length) {
+                console.log(
+                    "No executable found with this pattern:\n",
+                    chromiumExePattern
+                );
+                return undefined
+            }
+            return browserExecutablePath[0];
+        } catch (e) {
+            console.log("Error getting chromium Path: ", e);
+            return undefined;
         }
     }
 

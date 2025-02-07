@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { exec } = require("child_process");
 const { app, BrowserWindow, screen, ipcMain } = require("electron");
 const path = require("path");
@@ -13,14 +14,17 @@ const { triggerAsyncId } = require("async_hooks");
 // - Default = Download
 const ipc = ipcMain;
 
-//  Calling from exe  - > const operationProcess = process.argv[1] || "download";
 //  Calling from exe  - > app.exe upload
 //  Calling from node - > electron . upload
 
 const operationProcess =
-    process.env.NODE_ENV === "production"
+    app.isPackaged
         ? process.argv[1] || "download"
         : process.argv[2] || "download";
+
+        
+console.log('In Production: ', app.isPackaged)
+console.log('Operation Mode\n', operationProcess)
 
 let mainWindow;
 
