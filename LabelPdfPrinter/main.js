@@ -30,7 +30,7 @@ async function parsePdfBindings(fileName, filePath) {
   //    [printerName]-[productCode]-[pageCopies].pdf
   //    godex ez4401i-951570252516-120.pdf
 
-  const regex = /^(\d+)-([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
+  const regex = /^(\d+)?-?([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
   const match = fileName.match(regex);
   if (match) {
     return {
