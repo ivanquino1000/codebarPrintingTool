@@ -20,6 +20,13 @@
         "WebAppType": "ArcaDigital",
         "User": "gri.admin@jbsistemas.com",
         "Password": "@Misti456@"
+      },
+      {
+        "name": "rq",
+        "Url": "https://rq.arca.digital/items",
+        "WebAppType": "ArcaDigital",
+        "User": "admin.rq@jbsistemas.com",
+        "Password": "@Misti+@"
       }
     ]
 }

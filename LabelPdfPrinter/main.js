@@ -1,11 +1,12 @@
 require("dotenv").config();
-const { exec } = require('child_process');
+const { exec } = require("child_process");
 const { error } = require("console");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
-const { getPrinters,print } = require("pdf-to-printer");
+const { print } = require("pdf-to-printer");
+const { getPrinters, getPrinterStatus } = require("./printerData.js");
 
 const exeDir = path.dirname(process.execPath);
 
@@ -27,8 +28,8 @@ main();
 //  Returns pdfObject with required data
 async function parsePdfBindings(fileName, filePath) {
   // Parse input pdfName format instructions
-  //    [printerName]-[productCode]-[pageCopies].pdf
-  //    godex ez4401i-951570252516-120.pdf
+  //    [id]?-?[printerName]-[productCode]-[pageCopies].pdf
+  //    [id]?-?godex ez4401i-951570252516-120.pdf
 
   const regex = /^(\d+)?-?([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
   const match = fileName.match(regex);
@@ -46,7 +47,6 @@ async function parsePdfBindings(fileName, filePath) {
 }
 
 async function main() {
-
   // Exit the program if the input folder does not exist or is not accessible
   if (!fs.existsSync(pdfLayoutDir)) {
     //fs.mkdirSync(pdfLayoutDir, { recursive: true });
@@ -93,6 +93,7 @@ async function main() {
     try {
       const pdfName = multiPagePdf[i];
       const pdf = await parsePdfBindings(pdfName, pdfOutputDir);
+      await checkPrinterStatus(pdf.printerName);
       await printPDF(pdf);
     } catch (e) {
       console.error(`${i} ERROR at processing pdf.\n ${e}`);
@@ -101,24 +102,26 @@ async function main() {
   console.log(files);
 }
 
-
-async function waitForPrinter(printerName) {
-  const timeout = 30000
-  const startTime = Date.now();
-  
-  while (Date.now() - startTime < timeout) {
-    const printers = await getPrinters();
-    const printer = printers.find(p => p.name === printerName);
-
-    if (printer && printer.status === 'idle') {
-      return true; // Printer is ready
+async function checkPrinterStatus(
+  printerName,
+  timeout = 10000,
+  interval = 3000
+) {
+  let elapsedTime = 0;
+  while (elapsedTime < timeout) {
+    const isReady = (await getPrinterStatus(printerName)) == "Unknown";
+    if (isReady) {
+      return true;
     }
 
-    console.log(`Waiting for printer ${printerName} to become available...`);
-    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 1 second before checking again
+    // Wait for the interval before retrying (3 seconds)
+    await new Promise((resolve) => setTimeout(resolve, interval));
+    elapsedTime += interval;
   }
 
-  throw new Error(`Printer ${printerName} is not available after waiting for ${timeout}ms`);
+  // Timeout reached, return false if not ready
+  console.log("Timeout reached. Printer is not ready.");
+  return false;
 }
 
 async function createMultiPagePdf(pdf) {
@@ -138,7 +141,7 @@ async function createMultiPagePdf(pdf) {
   // Save the new multi-page PDF
   const newPdfBytes = await newPdf.save();
 
-  // Create output folder 
+  // Create output folder
   if (!fs.existsSync(pdfOutputDir)) {
     fs.mkdirSync(pdfOutputDir, { recursive: true });
   }
@@ -151,12 +154,11 @@ async function createMultiPagePdf(pdf) {
 }
 
 async function printPDF(pdf) {
-
   try {
     const options = {
       printer: pdf.printerName,
       sumatraPdfPath: localSumatraPdfPath,
-      orientation: 'landscape'
+      orientation: "landscape",
     };
 
     // await waitForPrinter(pdf.printerName)
