@@ -17,14 +17,12 @@ const ipc = ipcMain;
 //  Calling from exe  - > app.exe upload
 //  Calling from node - > electron . upload
 
-const operationProcess =
-    app.isPackaged
-        ? process.argv[1] || "download"
-        : process.argv[2] || "download";
+const operationProcess = app.isPackaged
+    ? process.argv[1] || "download"
+    : process.argv[2] || "download";
 
-        
-console.log('In Production: ', app.isPackaged)
-console.log('Operation Mode\n', operationProcess)
+console.log("In Production: ", app.isPackaged);
+console.log("Operation Mode\n", operationProcess);
 
 let mainWindow;
 

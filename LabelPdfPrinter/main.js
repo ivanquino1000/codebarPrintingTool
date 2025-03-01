@@ -7,6 +7,7 @@ const path = require("path");
 const { PDFDocument } = require("pdf-lib");
 const { print } = require("pdf-to-printer");
 const { getPrinters, getPrinterStatus } = require("./printerData.js");
+const { select, Separator } = require("@inquirer/prompts");
 
 const exeDir = path.dirname(process.execPath);
 
@@ -25,49 +26,28 @@ if (process.env.NODE_ENV === "development") {
 
 main();
 
-//  Returns pdfObject with required data
-async function parsePdfBindings(fileName, filePath) {
-  // Parse input pdfName format instructions
-  //    [id]?-?[printerName]-[productCode]-[pageCopies].pdf
-  //    [id]?-?godex ez4401i-951570252516-120.pdf
-
-  const regex = /^(\d+)?-?([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
-  const match = fileName.match(regex);
-  if (match) {
-    return {
-      path: path.join(filePath, fileName),
-      pdfName: fileName,
-      printerName: match[2],
-      productCode: match[3],
-      pageCopies: parseInt(match[4], 10),
-    };
-  } else {
-    throw new Error("Filename does not match expected format.");
-  }
-}
-
 async function main() {
   // Exit the program if the input folder does not exist or is not accessible
   if (!fs.existsSync(pdfLayoutDir)) {
-    //fs.mkdirSync(pdfLayoutDir, { recursive: true });
-    console.error(`No pdf input folder found returning ./pdf-layout`);
-    return;
-  }
-
-  const files = fs.readdirSync(pdfLayoutDir);
-
-  // Exit if no files to process in the input folder
-  if (files.length === 0) {
-    console.error(`No files found in : ${pdfLayoutDir}`);
+    console.error(`Missing Input Layout Folder : ./pdf-layout`);
     return;
   }
 
   // Restart output folder
-  if (fs.existsSync(pdfOutputDir)) {
-    fs.rmSync(pdfOutputDir, { recursive: true, force: true });
+  {
+    if (fs.existsSync(pdfOutputDir)) {
+      fs.rmSync(pdfOutputDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(pdfOutputDir, { recursive: true });
   }
 
-  fs.mkdirSync(pdfOutputDir, { recursive: true });
+  const files = fs.readdirSync(pdfLayoutDir);
+
+  // No Files on input folder
+  if (files.length === 0) {
+    console.error(`No files found in : ${pdfLayoutDir}`);
+    return;
+  }
 
   // generate multi-page pdf
   for (let i = 0; i < files.length; i++) {
@@ -76,7 +56,7 @@ async function main() {
       const pdf = await parsePdfBindings(pdfName, pdfLayoutDir);
       await createMultiPagePdf(pdf);
     } catch (e) {
-      console.error(`${i} ERROR at creating pdf.\n ${e}`);
+      console.error(`${i} ERROR creating pdf.\n ${e}`);
     }
   }
 
@@ -93,13 +73,32 @@ async function main() {
     try {
       const pdfName = multiPagePdf[i];
       const pdf = await parsePdfBindings(pdfName, pdfOutputDir);
-      await checkPrinterStatus(pdf.printerName);
       await printPDF(pdf);
     } catch (e) {
       console.error(`${i} ERROR at processing pdf.\n ${e}`);
     }
   }
   console.log(files);
+}
+
+//  Returns a pdf-Object with embeded data
+async function parsePdfBindings(fileName, filePath) {
+  //    [id]?-?[printerName]-[productCode]-[pageCopies].pdf
+  //    [id]?-?godex ez4401i-951570252516-120.pdf
+
+  const regex = /^(\d+)?-?([a-zA-Z0-9\s\(\)-]+)-([a-zA-Z0-9-]+)-(\d+)\.pdf$/;
+  const match = fileName.match(regex);
+  if (match) {
+    return {
+      path: path.join(filePath, fileName),
+      pdfName: fileName,
+      printerName: match[2],
+      productCode: match[3],
+      pageCopies: parseInt(match[4], 10),
+    };
+  } else {
+    throw new Error("PDF Metadata doesn't match expected format.");
+  }
 }
 
 async function checkPrinterStatus(
@@ -149,7 +148,7 @@ async function createMultiPagePdf(pdf) {
   const newPdfPath = path.join(pdfOutputDir, `${pdf.pdfName}`);
   fs.writeFileSync(newPdfPath, newPdfBytes);
 
-  console.log(`Created new multi-page PDF at : \n ${newPdfPath}`);
+  //console.log(`Multi-page PDF created at : \n ${newPdfPath}`);
   return newPdfPath;
 }
 
@@ -161,12 +160,29 @@ async function printPDF(pdf) {
       orientation: "landscape",
     };
 
-    // await waitForPrinter(pdf.printerName)
-    const jobID = await print(pdf.path, options);
+    const ready = await checkPrinterStatus(pdf.printerName);
+    
+    if (ready) {
+      const action = await select({
+        message: `Error al Imprimir ${pdf.name}`,
+        choices: [
+          {
+            name: "continuar",
+            value: "continue",
+            description: "envia a imprimir el resto de pdfs",
+          },
+          {
+            name: "cancelar",
+            value: "cancel",
+            description: "cancela la impresion de todos los pdf restantes",
+          },
+        ],
+      });
+    }
 
-    console.log(
-      `Print job ${jobID} sent successfully to printer "${pdf.printerName}".`
-    );
+    await print(pdf.path, options);
+
+    console.log(`Print job sent successfully to printer "${pdf.printerName}".`);
   } catch (err) {
     console.error(`Error printing to printer "${pdf.printerName}":`, err);
   }

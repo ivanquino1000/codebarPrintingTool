@@ -5,24 +5,43 @@ const util = require("util");
 // Promisify exec to use async/await
 const execFileAsync = util.promisify(execFile);
 
+/* const properties = {
+  DeviceID: "deviceId",
+  Name: "name",
+  JobCount: "jobCount",
+  PrinterPaperNames: "paperSizes",
+  Status: "status",
+}; */
+
 const properties = {
   DeviceID: "deviceId",
   Name: "name",
+  JobCount: "jobCount",
   PrinterPaperNames: "paperSizes",
-  Status: "status",
+  PrinterStatus: "status",
 };
 
 // This function checks if the printer data is valid and parses the data
 function IsValidPrinter(printer) {
+  /* const printerData = {
+        deviceId: "",
+        name: "",
+        paperSizes: [],
+        status: "",
+      }; */
+
   const printerData = {
-    deviceId: "",
     name: "",
-    paperSizes: [],
+    jobCount: "",
     status: "",
   };
 
   printer.split(/\r?\n/).forEach((line) => {
     let [label, value] = line.split(":").map((el) => el.trim());
+
+    if (label === undefined || value === undefined) {
+      return;
+    }
 
     // handle array dots
     if (value.match(/^{(.*)(\.{3})}$/)) {
@@ -52,7 +71,6 @@ function IsValidPrinter(printer) {
     printerData,
   };
 }
-
 async function getPrinters() {
   function stdoutHandler(stdout) {
     const printers = [];
@@ -76,7 +94,8 @@ async function getPrinters() {
   try {
     const { stdout } = await execFileAsync("Powershell.exe", [
       "-Command",
-      `Get-CimInstance Win32_Printer -Property DeviceID,Name,PrinterPaperNames,Status`,
+      "Get-Printer | Format-List",
+      //`Get-CimInstance Win32_Printer -Property DeviceID,Name,PrinterPaperNames,Status`,
     ]);
     return stdoutHandler(stdout);
   } catch (error) {
@@ -84,18 +103,4 @@ async function getPrinters() {
   }
 }
 
-async function getPrinterStatus(printerName) {
-  const printers = await getPrinters();
-  const printer = printers.find((printer) => printer.name === printerName);
-  if (!printer) {
-    console.log(`Printer ${printerName} not found.`);
-    return null;
-  }
-  console.log(`${printerName}  state: ` + printer.status);
-  return printer.status;
-}
-
-module.exports = {
-  getPrinters,
-  getPrinterStatus,
-};
+getPrinters();
